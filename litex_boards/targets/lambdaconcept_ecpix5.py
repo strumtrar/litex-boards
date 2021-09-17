@@ -110,7 +110,7 @@ class BaseSoC(SoCCore):
                 pads       = self.platform.request("eth"),
                 rx_delay   = 0e-9)
             if with_ethernet:
-                self.add_ethernet(phy=self.ethphy)
+                self.add_ethernet(phy=self.ethphy, dynamic_ip=True)
             if with_etherbone:
                 self.add_etherbone(phy=self.ethphy)
 
