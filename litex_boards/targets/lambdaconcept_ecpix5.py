@@ -6,6 +6,8 @@
 # Copyright (c) 2020-2022 Florent Kermarrec <florent@enjoy-digital.fr>
 # SPDX-License-Identifier: BSD-2-Clause
 
+import tempfile
+
 from migen import *
 from migen.genlib.resetsync import AsyncResetSynchronizer
 
@@ -83,6 +85,8 @@ class BaseSoC(SoCCore):
         with_led_chaser        = True,
         **kwargs):
         platform = lambdaconcept_ecpix5.Platform(device=device, toolchain="trellis")
+        
+        self.gateware_dir = ""
 
         # CRG --------------------------------------------------------------------------------------
         self.submodules.crg = _CRG(platform, sys_clk_freq)
@@ -217,6 +221,32 @@ class BaseSoC(SoCCore):
                 pads         = Cat(leds_pads),
                 sys_clk_freq = sys_clk_freq)
 
+    def set_gateware_dir(self, gateware_dir):
+        self.gateware_dir = gateware_dir
+
+    def initialize_rom(self, data, args=[]):
+        if args and args.no_compile_software:
+            (_, path) = tempfile.mkstemp()
+            subprocess.check_call(["ecpbram", "-g", path, "-w", str(self.rom.mem.width), "-d", str(int(self.integrated_rom_size / 4)), "-s" "0"])
+            random_file = open(path, 'r')
+            data = []
+            random_lines = random_file.readlines()
+            for line in random_lines:
+                data.append(int(line, 16))
+
+            os.remove(path)
+
+        self.init_rom(name="rom", contents=data, auto_size=True)
+
+        # Save actual expected contents for future use as gateware/mem.init
+        content = ""
+        formatter = "{:0" + str(int(self.rom.mem.width / 4)) + "X}\n"
+        for d in data:
+            content += formatter.format(d).zfill(int(self.rom.mem.width / 4))
+        romfile = os.open(os.path.join(self.gateware_dir, "mem.init"), os.O_WRONLY | os.O_CREAT)
+        os.write(romfile, content.encode())
+        os.close(romfile)
+
 # Build --------------------------------------------------------------------------------------------
 
 def main():
@@ -253,7 +283,10 @@ def main():
     if args.with_sdcard:
         soc.add_sdcard()
     builder = Builder(soc, **builder_argdict(args))
+    soc.set_gateware_dir(builder.gateware_dir)
     builder.build(**trellis_argdict(args), run=args.build)
+
+    soc.initialize_rom([], args)
 
     if args.load:
         prog = soc.platform.create_programmer()
