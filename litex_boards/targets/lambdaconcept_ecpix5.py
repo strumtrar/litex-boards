@@ -21,6 +21,7 @@ from litex.soc.integration.builder import *
 from litex.soc.cores.led import LedChaser
 from litex.soc.cores.video import VideoDVIPHY
 from litex.soc.cores.bitbang import I2CMaster
+from litex.soc.cores.cpu.vexriscv_smp import VexRiscvSMP
 
 from litedram.modules import MT41K256M16
 from litedram.phy import ECP5DDRPHY
@@ -269,6 +270,7 @@ def main():
     builder_args(parser)
     soc_core_args(parser)
     trellis_args(parser)
+    VexRiscvSMP.args_fill(parser)
     args = parser.parse_args()
 
     soc = BaseSoC(
@@ -282,6 +284,7 @@ def main():
     )
     if args.with_sdcard:
         soc.add_sdcard()
+    VexRiscvSMP.args_read(args)
     builder = Builder(soc, **builder_argdict(args))
     soc.set_gateware_dir(builder.gateware_dir)
     builder.build(**trellis_argdict(args), run=args.build)
