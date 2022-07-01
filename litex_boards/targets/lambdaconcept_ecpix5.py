@@ -92,6 +92,9 @@ class BaseSoC(SoCCore):
         # CRG --------------------------------------------------------------------------------------
         self.submodules.crg = _CRG(platform, sys_clk_freq)
 
+        kwargs["integrated_sram_size"] = 1024 * 6
+        kwargs["integrated_rom_size"]  = 1024 * 64
+
         # SoCCore ----------------------------------------------------------------------------------
         SoCCore.__init__(self, platform, sys_clk_freq, ident="LiteX SoC on ECPIX-5", **kwargs)
 
@@ -105,7 +108,7 @@ class BaseSoC(SoCCore):
             self.add_sdram("sdram",
                 phy           = self.ddrphy,
                 module        = MT41K256M16(sys_clk_freq, "1:2"),
-                l2_cache_size = kwargs.get("l2_size", 8192)
+                l2_cache_size = 2048,
             )
 
         # Ethernet / Etherbone ---------------------------------------------------------------------
