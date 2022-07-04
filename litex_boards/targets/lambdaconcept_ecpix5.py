@@ -94,6 +94,8 @@ class BaseSoC(SoCCore):
 
         kwargs["integrated_sram_size"] = 1024 * 6
         kwargs["integrated_rom_size"]  = 1024 * 64
+        # use Wishbone and L2 for memory access
+        kwargs["l2_size"] = 2048
 
         # SoCCore ----------------------------------------------------------------------------------
         SoCCore.__init__(self, platform, sys_clk_freq, ident="LiteX SoC on ECPIX-5", **kwargs)
@@ -287,6 +289,9 @@ def main():
     )
     if args.with_sdcard:
         soc.add_sdcard()
+
+    args.with_wishbone_memory = True
+
     VexRiscvSMP.args_read(args)
     builder = Builder(soc, **builder_argdict(args))
     soc.set_gateware_dir(builder.gateware_dir)
