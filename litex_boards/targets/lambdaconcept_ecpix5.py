@@ -81,6 +81,7 @@ class BaseSoC(SoCCore):
     def __init__(self, device="85F", sys_clk_freq=int(75e6),
         with_ethernet          = False,
         with_etherbone         = False,
+        with_jtagbone          = True,
         with_video_terminal    = False,
         with_video_framebuffer = False,
         with_led_chaser        = True,
@@ -123,6 +124,9 @@ class BaseSoC(SoCCore):
                 self.add_ethernet(phy=self.ethphy, dynamic_ip=True)
             if with_etherbone:
                 self.add_etherbone(phy=self.ethphy)
+
+        if with_jtagbone:
+            self.add_jtagbone()
 
         # HDMI -------------------------------------------------------------------------------------
         if with_video_terminal or with_video_framebuffer:
@@ -265,6 +269,7 @@ def main():
     target_group.add_argument("--device",          default="85F",       help="ECP5 device (45F or 85F).")
     target_group.add_argument("--sys-clk-freq",    default=75e6,        help="System clock frequency.")
     target_group.add_argument("--with-sdcard",     action="store_true", help="Enable SDCard support.")
+    target_group.add_argument("--with-jtagbone",     action="store_true", help="Enable JTAGBone support.")
     ethopts = target_group.add_mutually_exclusive_group()
     ethopts.add_argument("--with-ethernet",  action="store_true", help="Enable Ethernet support.")
     ethopts.add_argument("--with-etherbone", action="store_true", help="Enable Etherbone support.")
@@ -283,6 +288,7 @@ def main():
         sys_clk_freq           = int(float(args.sys_clk_freq)),
         with_ethernet          = args.with_ethernet,
         with_etherbone         = args.with_etherbone,
+        with_jtagbone         = args.with_jtagbone,
         with_video_terminal    = args.with_video_terminal,
         with_video_framebuffer = args.with_video_framebuffer,
         **soc_core_argdict(args)
