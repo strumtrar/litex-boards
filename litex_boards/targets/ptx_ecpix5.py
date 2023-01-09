@@ -22,6 +22,7 @@ class PtxSoC(lc_ecpix5.BaseSoC):
         with_led_chaser        = False,
         with_ws2812            = True,
         with_rotary            = True,
+        with_blinky            = False,
         **kwargs):
         self.gateware_dir = ""
 
@@ -32,6 +33,36 @@ class PtxSoC(lc_ecpix5.BaseSoC):
 
         # SoCCore ----------------------------------------------------------------------------------
         super().__init__(device, sys_clk_freq, with_ethernet, with_led_chaser, **kwargs)
+
+        if with_blinky:
+            from blinky.core import Blinky
+
+            leds_pads = []
+            for i in range(4):
+                rgb_led_pads = self.platform.request("rgb_led", i)
+                comb += [getattr(rgb_led_pads, n).eq(1) for n in "rg"]
+                leds_pads += [getattr(rgb_led_pads, n) for n in "b"]
+
+            self.submodules.blinky1 = Blinky(
+                platform = self.platform,
+                pads = leds_pads[0],
+                clk_div = 25000000)
+            self.csr.add("blinky1", n=9)
+            self.submodules.blinky2 = Blinky(
+                platform = self.platform,
+                pads = leds_pads[1],
+                clk_div = 25000000)
+            self.csr.add("blinky2", n=10)
+            self.submodules.blinky3 = Blinky(
+                platform = self.platform,
+                pads = leds_pads[2],
+                clk_div = 25000000)
+            self.csr.add("blinky3", n=11)
+            self.submodules.blinky4 = Blinky(
+                platform = self.platform,
+                pads = leds_pads[3],
+                clk_div = 25000000)
+            self.csr.add("blinky4", n=12)
 
     def set_gateware_dir(self, gateware_dir):
         self.gateware_dir = gateware_dir
@@ -67,6 +98,7 @@ def main():
     target_group.add_argument("--device",          default="85F",       help="ECP5 device (45F or 85F).")
     target_group.add_argument("--sys-clk-freq",    default=75e6,        help="System clock frequency.")
     target_group.add_argument("--with-sdcard",     action="store_true", help="Enable SDCard support.")
+    target_group.add_argument("--with-blinky",     action="store_true", help="Enable Blinky support.")
     ethopts = target_group.add_mutually_exclusive_group()
     ethopts.add_argument("--with-ethernet",  action="store_true", help="Enable Ethernet support.")
 
@@ -80,6 +112,8 @@ def main():
         device                 = args.device,
         sys_clk_freq           = int(float(args.sys_clk_freq)),
         with_ethernet          = args.with_ethernet,
+        with_blinky            = args.with_blinky,
+        with_led_chaser        = False,
         **soc_core_argdict(args)
     )
     if args.with_sdcard:
