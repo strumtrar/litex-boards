@@ -33,12 +33,6 @@ class PtxSoC(lc_ecpix5.BaseSoC):
         # SoCCore ----------------------------------------------------------------------------------
         super().__init__(device, sys_clk_freq, with_ethernet, with_led_chaser, **kwargs)
 
-        self.add_sdram("sdram",
-                       phy           = self.ddrphy,
-                       module        = MT41K256M16(sys_clk_freq, "1:2"),
-                       l2_cache_size = 2048,
-        )
-
     def set_gateware_dir(self, gateware_dir):
         self.gateware_dir = gateware_dir
 
@@ -90,6 +84,9 @@ def main():
     )
     if args.with_sdcard:
         soc.add_sdcard()
+
+    args.with_wishbone_memory = True
+
     VexRiscvSMP.args_read(args)
     builder = Builder(soc, **builder_argdict(args))
     soc.set_gateware_dir(builder.gateware_dir)
