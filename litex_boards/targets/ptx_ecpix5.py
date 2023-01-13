@@ -50,6 +50,26 @@ class PtxSoC(lc_ecpix5.BaseSoC):
                 size = 4*32,
             ))
 
+        if with_rotary:
+            from litex.build.generic_platform import Pins, IOStandard
+            from rotary_encoder.core import Rotary_Encoder
+
+            # - BASE=0xf0002000
+            # - RESET=0x0
+            # - DIN=0x4
+            # - DOUT=0x8
+            # - DIRECTION=0xc
+            self.platform.add_extension([("rotary", 0, Pins("pmod7:2", "pmod7:3"), IOStandard("LVCMOS33"))])
+            rotary_pads = self.platform.request("rotary", 0)
+            encoder = Rotary_Encoder(
+                platform = self.platform,
+                A = rotary_pads[0],
+                B = rotary_pads[1]
+            )
+            self.submodules.encoder = encoder
+            self.bus.add_master(name="encoder", master=self.encoder.bus)
+            self.csr.add("rotary", n=13)
+
         if with_blinky:
             from blinky.core import Blinky
 
@@ -116,6 +136,7 @@ def main():
     target_group.add_argument("--with-sdcard",     action="store_true", help="Enable SDCard support.")
     target_group.add_argument("--with-blinky",     action="store_true", help="Enable Blinky support.")
     target_group.add_argument("--with-ws2812",     action="store_true", help="Enable WS2812 support.")
+    target_group.add_argument("--with-rotary",     action="store_true", help="Enable Rotary support.")
     ethopts = target_group.add_mutually_exclusive_group()
     ethopts.add_argument("--with-ethernet",  action="store_true", help="Enable Ethernet support.")
 
@@ -131,6 +152,7 @@ def main():
         with_ethernet          = args.with_ethernet,
         with_blinky            = args.with_blinky,
         with_ws2812            = args.with_ws2812,
+        with_rotary            = args.with_rotary,
         with_led_chaser        = False,
         **soc_core_argdict(args)
     )
