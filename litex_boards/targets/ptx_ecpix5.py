@@ -34,6 +34,22 @@ class PtxSoC(lc_ecpix5.BaseSoC):
         # SoCCore ----------------------------------------------------------------------------------
         super().__init__(device, sys_clk_freq, with_ethernet, with_led_chaser, **kwargs)
 
+        if with_ws2812:
+            from litex.build.generic_platform import Pins, IOStandard
+            from litex.soc.integration.soc import SoCRegion
+            from litex.soc.cores.led import WS2812
+            self.platform.add_extension([("ws2812", 0, Pins("pmod7:1"), IOStandard("LVCMOS33"))])
+
+            # - mem_list to get base address
+            # - mem_write $BASE+i 0xGGRRBB
+            self.submodules.ws2812 = WS2812(
+                self.platform.request("ws2812"),
+                nleds=32, sys_clk_freq=sys_clk_freq)
+            self.bus.add_slave(name="ws2812", slave=self.ws2812.bus, region=SoCRegion(
+                origin = 0x20000000,
+                size = 4*32,
+            ))
+
         if with_blinky:
             from blinky.core import Blinky
 
@@ -99,6 +115,7 @@ def main():
     target_group.add_argument("--sys-clk-freq",    default=75e6,        help="System clock frequency.")
     target_group.add_argument("--with-sdcard",     action="store_true", help="Enable SDCard support.")
     target_group.add_argument("--with-blinky",     action="store_true", help="Enable Blinky support.")
+    target_group.add_argument("--with-ws2812",     action="store_true", help="Enable WS2812 support.")
     ethopts = target_group.add_mutually_exclusive_group()
     ethopts.add_argument("--with-ethernet",  action="store_true", help="Enable Ethernet support.")
 
@@ -113,6 +130,7 @@ def main():
         sys_clk_freq           = int(float(args.sys_clk_freq)),
         with_ethernet          = args.with_ethernet,
         with_blinky            = args.with_blinky,
+        with_ws2812            = args.with_ws2812,
         with_led_chaser        = False,
         **soc_core_argdict(args)
     )
