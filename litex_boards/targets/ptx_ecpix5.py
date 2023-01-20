@@ -59,7 +59,7 @@ class PtxSoC(lc_ecpix5.BaseSoC):
             # - DIN=0x4
             # - DOUT=0x8
             # - DIRECTION=0xc
-            self.platform.add_extension([("rotary", 0, Pins("pmod7:2", "pmod7:3"), IOStandard("LVCMOS33"))])
+            self.platform.add_extension([("rotary", 0, Pins("pmod7:4", "pmod7:5"), IOStandard("LVCMOS33"))])
             rotary_pads = self.platform.request("rotary", 0)
             encoder = Rotary_Encoder(
                 platform = self.platform,
